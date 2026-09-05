@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quiz Winner List Maker</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6f8;font-family:Arial,sans-serif;color:#222}
+.wrap{max-width:1000px;margin:auto;padding:14px}.card{background:#fff;border-radius:16px;padding:18px;margin:12px 0;box-shadow:0 5px 20px #00000012}
+h1{margin:0 0 6px;font-size:24px}.muted{color:#777;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+input,textarea{width:100%;padding:11px;border:1px solid #ddd;border-radius:9px;font-size:16px}textarea{min-height:120px}
+button{border:0;border-radius:9px;padding:11px 15px;cursor:pointer;font-weight:600}.primary{background:#222;color:white}.secondary{background:#eee}
+.search{font-size:19px}.results{max-height:280px;overflow:auto;margin-top:10px}
+.person{padding:12px;border:1px solid #eee;border-radius:9px;margin:6px 0;cursor:pointer}.person:hover{background:#f3f5f7}
+.person b{display:block;font-size:17px}.person small{color:#888}
+.status{padding:10px;background:#f1f4f7;border-radius:9px;margin-top:10px}
+.preview{white-space:pre-wrap;background:#fafafa;border:1px solid #eee;border-radius:10px;padding:14px;font-family:Arial,sans-serif;line-height:1.45;max-height:600px;overflow:auto}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.full{grid-column:1/-1}
+@media(max-width:650px){.grid{grid-template-columns:1fr}.wrap{padding:8px}}
+</style>
+<style>
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.person{display:block;width:100%;text-align:left;background:#fff}
+.person:active{transform:scale(.99);background:#f0f3f6}
+.topGap{margin-top:12px}
+.winnerRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid #e5e7eb;border-radius:9px;margin:6px 0;background:#fafafa}
+.winnerRow span{min-width:0;overflow-wrap:anywhere}
+.danger{background:#ffe8e8;color:#a40000}
+.hero{border-left:5px solid #222}
+</style>
+
+<body>
+<div class="wrap">
+  <div class="card hero">
+    <h1>🏆 Quiz Winner List Maker — Pro</h1>
+    <div class="muted">नाम एक बार Master List में सेव करें → Search करें → नाम पर टैप करें → वह अगली खाली Winner Rank में अपने-आप लगेगा।</div>
+  </div>
+
+  <div class="card">
+    <h3>1️⃣ Master Name List</h3>
+    <textarea id="names" placeholder="हर लाइन में एक पूरा नाम&#10;शाबान खां (मुझा )&#10;फूलबाबू अंसारी (कलीनगर )&#10;सईद अहमद (शेरपुर )"></textarea>
+    <div class="actions">
+      <button type="button" class="primary" id="saveBtn">💾 नाम सेव करें</button>
+      <button type="button" class="secondary" id="clearNamesBtn">🗑️ नाम साफ करें</button>
+    </div>
+    <div class="muted" id="nameCount">0 नाम सेव हैं।</div>
+  </div>
+
+  <div class="card">
+    <h3>2️⃣ आज की Post की जानकारी</h3>
+    <div class="grid">
+      <input id="date" value="03/सितम्बर/2026" placeholder="03/सितम्बर/2026">
+      <input id="hijri" value="20/रबीउल अव्वल/1448" placeholder="20/रबीउल अव्वल/1448">
+      <input id="answer" value="(न)" readonly aria-label="सही जवाब (न) — स्थायी">
+      <input id="questionNo" placeholder="सवाल नंबर — जैसे 173">
+      <input id="total" inputmode="numeric" placeholder="कुल Top Winner — जैसे 40" value="40">
+      <div class="mainWrap">
+        <input id="mainWinner" autocomplete="off" placeholder="मुख्य Winner खोजें — जैसे: फिर / फुर / चुम">
+        <div class="results inlineResults" id="mainResults"></div>
+      </div>
+      <input class="full" id="place" placeholder="स्थान — जैसे न्यूरिया शरीफ">
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>3️⃣ Winner जोड़ें</h3>
+    <input class="search" id="search" autocomplete="off" placeholder="🔎 नाम का कोई भी हिस्सा — जैसे: अकर / fur / चुम / खां">
+    <div class="status" id="status">पहले नाम सेव करें।</div>
+    <div class="results" id="results"></div>
+    <div id="manualSubmitBox" class="manualSubmitBox" hidden>
+      <div class="muted">❌ Master List में नाम नहीं मिला। नीचे वही खोजा हुआ नाम submit करें:</div>
+      <button type="button" class="primary" id="submitSearchedBtn">➕ यही नाम Submit करें</button>
+    </div>
+    <div class="muted">नाम न मिले तो ऊपर Search में पूरा नाम लिखकर <b>“यही नाम Submit करें”</b> दबाएँ। वह Winner में भी जुड़ जाएगा और Master List में भी हमेशा के लिए Save हो जाएगा।</div>
+  </div>
+
+  <div class="card">
+    <h3>4️⃣ चुने हुए Winners</h3>
+    <div id="winnerManager"></div>
+    <div class="actions topGap">
+      <button type="button" class="primary" id="copyBtn">📋 पूरी Post Copy करें</button>
+      <button type="button" class="secondary" id="undoBtn">↩️ पिछला नाम हटाएँ</button>
+      <button type="button" class="secondary" id="resetWinnersBtn">🗑️ सभी Winners हटाएँ</button>
+      <button type="button" class="danger" id="clearTodayBtn">♻️ आज का Form Reset</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>5️⃣ WhatsApp Preview</h3>
+    <div class="preview" id="preview"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = id => document.getElementById(id);
+  const STORE_NAMES = "quizWinnerMasterNames_v2";
+  const STORE_FORM = "quizWinnerForm_v2";
+  let names = [];
+  let winners = [];
+
+  const fixedBottom = `🌹*सही जवाब देनेवालों को मुबारक हो अल्लाह आप सब लोगों के इल्म में इज़ाफा फरमाए इल्म ए नाफेअ आता फरमाए और हम सब को कहने सुनने से ज़्यादा अमल करने की तौ फीक़ अता फरमाए आमीन सुम्मा आमीन* 🌹
+.................................... 🌼...............................
+
+*⚠️नोट /हमारे अकाबिर ऊलमा ए अहले सुन्नत के क़ौल और रिवायत में हवाला अलग हो सकता है इसका हरगिज़ मतलब यह नहीं की कोई रिवायत या कौल गलत है*
+......................................................................
+*पोस्ट (लिखी हुई तफ़सील) में कोई गलती या कमी नज़र आये तो एडमिन को ज़रूर मैसेज (msg) करें*
+............................. 🌹🌹..........................
+*सवाल आने का वक़्त दोपहर 1:00 PM  है और जवाब आने का वक्त  रात को 8:45 PM है बिनर लिस्ट 9:00 PM पर आएगी   इनशाअल्लाह*
+⚜️⚜️⚜️⚜️⚜️⚜️⚜️⚜️⚜️⚜️⚜️⚜️
+
+                🥇*तालिब ए दुआ*🥇
+         🥉*वसीम अख्तर तहसीनी*🥉
+*अल्लाह आप का हामियो नासिर हो*
+📚   *Admin teem... ✒️*
+*Join the group📲9068998786*
+*मो. वसीमअख्तर तहसीनी खतीब नूरी मस्जिद न्यूरिया*
+*जॉइन the group 📲9389519645*
+*मुशाहिद रज़ा बरकाती न्यूरिया*
+*Join the group  📲 8865810966*
+*मोहम्मद फ़िरोज़ खा़ंन न्यूरिया*
+*Join the group 📲 8923662955*
+*जनाब चुम्मन खां तहसीनी खटीमा*
+⛓️‍💥⛓️‍💥⛓️‍💥⛓️‍💥⛓️‍💥⛓️‍💥⛓️‍💥⛓️‍💥⛓️‍💥⛓️‍💥⛓️‍💥⛓️‍💥⛓️‍💥`;
+
+  function safeJSON(key, fallback) {
+    try {
+      const v = JSON.parse(localStorage.getItem(key));
+      return v == null ? fallback : v;
+    } catch (_) { return fallback; }
+  }
+
+  function norm(s) {
+    return String(s || "")
+      .toLocaleLowerCase("hi")
+      .normalize("NFKD")
+      .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u093C\u093E-\u094D\u0901-\u0903\u200C\u200Dـ]/g, "")
+      .replace(/[़]/g, "")
+      .replace(/[^\p{L}\p{N}]+/gu, "")
+      .replace(/q/g, "k") // harmless support for casual fragments
+      .trim();
+  }
+
+  function dedupe(arr) {
+    const out = [], seen = new Set();
+    for (const x of arr) {
+      const s = String(x || "").trim().replace(/\s+/g, " ");
+      if (!s) continue;
+      const k = norm(s);
+      if (!seen.has(k)) { seen.add(k); out.push(s); }
+    }
+    return out;
+  }
+
+  function digit(n) {
+    return String(n).split("").map(x => ["0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣"][+x]).join("");
+  }
+
+  function rankEmoji(rank) {
+    if (rank === 2) return "🥇";
+    if (rank === 3) return "🥈";
+    if (rank === 4) return "🥉";
+    if (rank % 5 === 0) return "🎖️";
+    return "🏅";
+  }
+
+  function load() {
+    const saved = safeJSON(STORE_NAMES, []);
+    names = Array.isArray(saved) ? dedupe(saved) : [];
+    const form = safeJSON(STORE_FORM, {});
+    ["date","hijri","questionNo","total","mainWinner","place"].forEach(id => {
+      if (form[id] !== undefined) $(id).value = form[id];
+    });
+    $("answer").value = "(न)";
+    if (!$("total").value) $("total").value = "40";
+    renderNames();
+    render();
+  }
+
+  function saveForm() {
+    const form = {};
+    ["date","hijri","questionNo","total","mainWinner","place"].forEach(id => form[id] = $(id).value);
+    try { localStorage.setItem(STORE_FORM, JSON.stringify(form)); } catch (_) {}
+  }
+
+  window.saveNames = function() {
+    const incoming = dedupe($("names").value.split(/\r?\n/));
+    names = dedupe(names.concat(incoming));
+    try { localStorage.setItem(STORE_NAMES, JSON.stringify(names)); }
+    catch (_) { alert("Browser storage उपलब्ध नहीं है। नाम इस session में रहेंगे।"); }
+    $("names").value = names.join("\n");
+    renderNames();
+    searchNames();
+    alert(`✅ ${names.length} नाम सेव हो गए।`);
+  };
+
+  window.clearNames = function() {
+    $("names").value = "";
+    $("nameCount").textContent = `📌 ${names.length} नाम Master List में सुरक्षित हैं।`;
+    searchNames();
+    alert("✅ ऊपर का नाम वाला box खाली कर दिया गया है। Saved Master Names सुरक्षित हैं। नए नाम डालकर फिर 'नाम सेव करें' दबाएँ।");
+  };
+
+  function renderNames() {
+    $("names").value = names.join("\n");
+    $("nameCount").textContent = `📌 ${names.length} नाम Master List में सेव हैं।`;
+  }
+
+  function scoreMatch(name, q) {
+    const query = norm(q);
+    if (!query) return 0;
+
+    // Search only at the START of a name token.
+    // Example: "फिर" finds "फिरोज़ खां", but not "मोहम्मद फ़िरोज़".
+    const rawTokens = String(name).toLocaleLowerCase("hi")
+      .split(/[\s()\-.,/]+/).filter(Boolean);
+
+    const tokenScore = rawTokens.some(t => norm(t).startsWith(query));
+    if (tokenScore) {
+      const first = norm(rawTokens[0] || "");
+      return first.startsWith(query) ? 1200 - norm(name).length : 900 - norm(name).length;
+    }
+    return -1;
+  }
+
+  window.searchNames = function() {
+    const q = $("search").value.trim();
+    const used = new Set(winners.map(x => norm(x.name)));
+    const box = $("results");
+    box.innerHTML = "";
+
+    if (!names.length) {
+      $("status").textContent = "पहले Master List में नाम सेव करें।";
+      return;
+    }
+    $("manualSubmitBox").hidden = true;
+    if (!q) {
+      $("status").textContent = `अगली खाली rank: ${digit(winners.length + 2)} • ऊपर Search में नाम का कोई हिस्सा लिखें।`;
+      return;
+    }
+
+    const found = names
+      .filter(n => !used.has(norm(n)))
+      .map(n => ({name:n, score:scoreMatch(n,q)}))
+      .filter(x => x.score >= 0)
+      .sort((a,b) => b.score - a.score || a.name.localeCompare(b.name, "hi"))
+      .slice(0, 80);
+
+    $("status").textContent = `${found.length} नाम मिले • अगली खाली rank: ${digit(winners.length + 2)}`;
+
+    found.forEach(item => {
+      const d = document.createElement("button");
+      d.type = "button";
+      d.className = "person";
+      d.innerHTML = `<b>${escapeHTML(item.name)}</b><small>👆 टैप करें → ${digit(winners.length+2)} rank में जुड़ जाएगा</small>`;
+      d.addEventListener("click", () => addWinner(item.name));
+      box.appendChild(d);
+    });
+    if (!found.length) {
+      box.innerHTML = "<div class='muted'>❌ कोई saved नाम नहीं मिला।</div>";
+      $("manualSubmitBox").hidden = false;
+    } else {
+      $("manualSubmitBox").hidden = true;
+    }
+  };
+
+  function addWinner(name) {
+    if (winners.some(x => norm(x.name) === norm(name))) return;
+    const max = Math.max(0, parseInt($("total").value, 10) || 0);
+    if (max && winners.length >= max - 1) {
+      alert(`⚠️ आपने ${max} Top Winner की सीमा पूरी कर दी है।`);
+      return;
+    }
+    winners.push({name});
+    $("search").value = "";
+    searchNames();
+    render();
+  }
+
+  function removeWinner(index) {
+    if (index < 0 || index >= winners.length) return;
+    winners.splice(index, 1);
+    searchNames();
+    render();
+  }
+
+  window.undoLast = function() {
+    if (!winners.length) { alert("कोई winner हटाने के लिए नहीं है।"); return; }
+    winners.pop();
+    searchNames();
+    render();
+  };
+
+  window.resetWinners = function() {
+    if (!winners.length) { alert("आज की winner list पहले से खाली है।"); return; }
+    if (!confirm("⚠️ आज के सभी winners हटाएँ?")) return;
+    winners = [];
+    searchNames();
+    render();
+  };
+
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[m]));
+  }
+
+  function build() {
+    const date = $("date").value || "03/सितम्बर/2026";
+    const hijri = $("hijri").value || "20/रबीउल अव्वल/1448";
+    const ans = "(न)";
+    const qno = $("questionNo").value || "173";
+    const total = $("total").value || "40";
+    const mw = $("mainWinner").value || "";
+    const place = $("place").value || "न्यूरिया शरीफ";
+
+    const lines = winners.map((w,i) =>
+      `🏆${rankEmoji(i+2)}${digit(i+2)} ➡️*${w.name}*`
+    ).join("\n");
+
+    return `👑📚*ज़हनी आज़माइश*📚 👑
+*بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ*
+*اَلصَّلٰوۃُ وَالسَّلَامُ عَلَیْکَ یَا رَسُوْلَ اللّٰهِ ﷺ*
+_______________________________________
+
+🌹 📔 *दिन :- पंज शंमबह /जुमेरात*
+🌹 🗒️*शमसी/तारीख :- ${date}*
+🌹 📜 *कमरी/ चांद की तारीख़ :- ${hijri}*
+...........................................................
+
+         🌹*आज का जवाब  ${ans} (${qno})*🌹
+
+   ❣️*सही जवाब देने वाले {${total}} टाप बिनर*❣️
+🌟....................🌟🌟....................🌟
+🏆🥇    *${mw}*  🥈
+🌟.................... 🌟🌟.....................🌟
+
+                 💝 *{${place}}*  💝                🌹🌹❣️❣️❣️❣️🌹🌹
+
+${lines}
+
+${fixedBottom}`;
+  }
+
+  function render() {
+    $("preview").textContent = build();
+    $("status").textContent = `अगली खाली rank: ${digit(winners.length + 2)}`;
+    renderWinnerManager();
+  }
+
+  function renderWinnerManager() {
+    let box = $("winnerManager");
+    if (!box) return;
+    box.innerHTML = "";
+    if (!winners.length) {
+      box.innerHTML = "<div class='muted'>अभी कोई winner नहीं जोड़ा गया है।</div>";
+      return;
+    }
+    winners.forEach((w,i) => {
+      const row = document.createElement("div");
+      row.className = "winnerRow";
+      row.innerHTML = `<span><b>${digit(i+2)}</b> ${escapeHTML(w.name)}</span>`;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "danger";
+      btn.textContent = "✕ हटाएँ";
+      btn.addEventListener("click", () => removeWinner(i));
+      row.appendChild(btn);
+      box.appendChild(row);
+    });
+  }
+
+  window.copyAll = async function() {
+    const text = build();
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        document.execCommand("copy");
+        ta.remove();
+      }
+      alert("✅ पूरी Winner List Copy हो गई। अब WhatsApp में Paste करें।");
+    } catch (e) {
+      alert("❌ Copy नहीं हो पाई। नीचे Preview पर long-press/click करके Copy करें।");
+    }
+  };
+
+  // Expose a test/reset helper without needing developer console.
+  window.clearToday = function() {
+    if (confirm("आज का पूरा form और winners reset करें? Master Names नहीं हटेंगे।")) {
+      winners = [];
+      ["date","hijri","answer","questionNo","mainWinner","place"].forEach(id => $(id).value = "");
+      $("total").value = "40";
+      $("search").value = "";
+      saveForm();
+      searchNames();
+      render();
+    }
+  };
+
+
+  function renderMainSearch() {
+    const q = $("mainWinner").value.trim();
+    const box = $("mainResults");
+    box.innerHTML = "";
+    if (!q) return;
+
+    const found = names.map(n => ({name:n, score:scoreMatch(n,q)}))
+      .filter(x => x.score >= 0)
+      .sort((a,b) => b.score - a.score || a.name.localeCompare(b.name, "hi"))
+      .slice(0, 50);
+
+    found.forEach(item => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "person";
+      b.innerHTML = `<b>${escapeHTML(item.name)}</b><small>👆 Main Winner के रूप में चुनें</small>`;
+      b.addEventListener("click", () => {
+        $("mainWinner").value = item.name;
+        box.innerHTML = "";
+        saveForm();
+        render();
+      });
+      box.appendChild(b);
+    });
+    if (!found.length) box.innerHTML = "<div class='muted'>❌ Saved name नहीं मिला। पूरा Main Winner नाम manually इसी box में लिख सकते हैं।</div>";
+  }
+
+  function submitSearchedName() {
+    const name = $("search").value.trim().replace(/\s+/g, " ");
+    if (!name) {
+      alert("⚠️ पहले Search box में पूरा नाम लिखें।");
+      $("search").focus();
+      return;
+    }
+    const existing = names.find(n => norm(n) === norm(name));
+    const finalName = existing || name;
+
+    if (!existing) {
+      names = dedupe(names.concat([name]));
+      try { localStorage.setItem(STORE_NAMES, JSON.stringify(names)); } catch (_) {}
+      renderNames();
+    }
+    addWinner(finalName);
+    $("search").value = "";
+    $("manualSubmitBox").hidden = true;
+    searchNames();
+    render();
+    alert(existing ? "✅ नाम Winner में जोड़ दिया गया।" : "✅ नया नाम Winner में जुड़ गया और Master List में भी हमेशा के लिए Save हो गया।");
+  }
+
+  // Live updates.
+  ["date","hijri","questionNo","total","mainWinner","place"].forEach(id => {
+    $(id).addEventListener("input", () => { saveForm(); render(); });
+  });
+  $("search").addEventListener("input", searchNames);
+  $("mainWinner").addEventListener("input", () => { renderMainSearch(); saveForm(); render(); });
+  $("submitSearchedBtn").addEventListener("click", submitSearchedName);
+  $("answer").value = "(न)";
+  $("answer").addEventListener("input", () => { $("answer").value = "(न)"; });
+
+  load();
+  searchNames();
+})();
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("saveBtn").addEventListener("click", window.saveNames);
+  document.getElementById("clearNamesBtn").addEventListener("click", window.clearNames);
+  document.getElementById("copyBtn").addEventListener("click", window.copyAll);
+  document.getElementById("undoBtn").addEventListener("click", window.undoLast);
+  document.getElementById("resetWinnersBtn").addEventListener("click", window.resetWinners);
+  document.getElementById("clearTodayBtn").addEventListener("click", window.clearToday);
+});
+</script>
+
+</body>
+</html>
