@@ -59,9 +59,9 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   <div class="card">
     <h3>2️⃣ आज की Post की जानकारी</h3>
     <div class="grid">
+      <input id="day" value="पंज शंमबह /जुमेरात" placeholder="पंज शंमबह /जुमेरात">
       <input id="date" value="03/सितम्बर/2026" placeholder="03/सितम्बर/2026">
       <input id="hijri" value="20/रबीउल अव्वल/1448" placeholder="20/रबीउल अव्वल/1448">
-      <input id="day" value="पंज शंमबह /जुमेरात" placeholder="पंज शंमबह /जुमेरात">
       <input id="answer" value="(न)" readonly aria-label="सही जवाब (न) — स्थायी">
       <input id="questionNo" placeholder="सवाल नंबर — जैसे 173">
       <input id="total" inputmode="numeric" placeholder="कुल Top Winner — जैसे 40" value="40">
@@ -166,8 +166,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   }
 
   function digit(n) {
-    const str = String(n).padStart(2, "0");
-    return str.split("").map(x => ["0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣"][+x]).join("");
+    return String(n).padStart(2, "0").split("").map(x => ["0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣"][+x]).join("");
   }
 
   function rankEmoji(rank) {
@@ -182,7 +181,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
     const saved = safeJSON(STORE_NAMES, []);
     names = Array.isArray(saved) ? dedupe(saved) : [];
     const form = safeJSON(STORE_FORM, {});
-    ["date","hijri","day","questionNo","total","mainWinner","place"].forEach(id => {
+    ["day","date","hijri","questionNo","total","mainWinner","place"].forEach(id => {
       if (form[id] !== undefined) $(id).value = form[id];
     });
     $("answer").value = "(न)";
@@ -193,7 +192,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 
   function saveForm() {
     const form = {};
-    ["date","hijri","questionNo","total","mainWinner","place"].forEach(id => form[id] = $(id).value);
+    ["day","date","hijri","questionNo","total","mainWinner","place"].forEach(id => form[id] = $(id).value);
     try { localStorage.setItem(STORE_FORM, JSON.stringify(form)); } catch (_) {}
   }
 
@@ -318,9 +317,9 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   }
 
   function build() {
+    const day = $("day").value || "पंज शंमबह /जुमेरात";
     const date = $("date").value || "03/सितम्बर/2026";
     const hijri = $("hijri").value || "20/रबीउल अव्वल/1448";
-    const day = $("day").value || "पंज शंमबह /जुमेरात";
     const ans = "(न)";
     const qno = $("questionNo").value || "173";
     const total = $("total").value || "40";
@@ -407,7 +406,7 @@ ${fixedBottom}`;
   window.clearToday = function() {
     if (confirm("आज का पूरा form और winners reset करें? Master Names नहीं हटेंगे।")) {
       winners = [];
-      ["date","hijri","answer","questionNo","mainWinner","place"].forEach(id => $(id).value = "");
+      ["day","date","hijri","answer","questionNo","mainWinner","place"].forEach(id => $(id).value = "");
       $("total").value = "40";
       $("search").value = "";
       saveForm();
@@ -468,7 +467,7 @@ ${fixedBottom}`;
   }
 
   // Live updates.
-  ["date","hijri","questionNo","total","mainWinner","place"].forEach(id => {
+  ["day","date","hijri","questionNo","total","mainWinner","place"].forEach(id => {
     $(id).addEventListener("input", () => { saveForm(); render(); });
   });
   $("search").addEventListener("input", searchNames);
