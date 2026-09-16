@@ -220,14 +220,14 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
           .map(x => ({name: x.name}))
       : [];
     $("answer").value = "(न)";
-    $("total").value = String(winners.length);
+    $("total").value = String(winners.length + ($("mainWinner").value.trim() ? 1 : 0));
     renderNames();
     render();
   }
 
   function saveForm() {
     const form = {};
-    $("total").value = String(winners.length);
+    $("total").value = String(winners.length + ($("mainWinner").value.trim() ? 1 : 0));
     ["day","date","hijri","questionNo","total","mainWinner","place"].forEach(id => form[id] = $(id).value);
     form.winners = winners.map(w => ({name: w.name}));
     try { localStorage.setItem(STORE_FORM, JSON.stringify(form)); } catch (_) {}
@@ -358,7 +358,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
     const hijri = $("hijri").value || "20/रबीउल अव्वल/1448";
     const ans = "(न)";
     const qno = $("questionNo").value || "173";
-    const total = $("total").value || "40";
+    const total = $("total").value || String(winners.length + (mw.trim() ? 1 : 0));
     const mw = $("mainWinner").value || "";
     const place = $("place").value || "न्यूरिया शरीफ";
 
@@ -391,7 +391,7 @@ ${fixedBottom}`;
   }
 
   function render() {
-    $("total").value = String(winners.length);
+    $("total").value = String(winners.length + ($("mainWinner").value.trim() ? 1 : 0));
     saveForm();
     $("preview").textContent = build();
     $("status").textContent = `अगली खाली rank: ${digit(winners.length + 2)}`;
