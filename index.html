@@ -508,11 +508,22 @@ ${fixedBottom}`;
       b.className = "person";
       b.innerHTML = `<b>${escapeHTML(item.name)}</b><small>👆 Main Winner के रूप में चुनें</small>`;
       b.addEventListener("click", () => {
-        $("mainWinner").value = item.name;
-        box.innerHTML = "";
-        saveForm();
-        render();
-      });
+      // Split "Name (Location)" into separate fields.
+      // Example: "फिरोज़ खां (न्यूरिया)" → name = "फिरोज़ खां", place = "न्यूरिया शरीफ़"
+      const selectedName = String(item.name);
+      const match = selectedName.match(/^(.*?)\s*\(([^()]*)\)\s*$/);
+
+      if (match) {
+        $("mainWinner").value = match[1].trim() + " शाहब";
+        $("place").value = match[2].trim() ? match[2].trim() + " शरीफ़" : "";
+      } else {
+        $("mainWinner").value = selectedName.trim();
+      }
+
+      box.innerHTML = "";
+      saveForm();
+      render();
+    });
       box.appendChild(b);
     });
     if (!found.length) box.innerHTML = "<div class='muted'>❌ Saved name नहीं मिला। पूरा Main Winner नाम manually इसी box में लिख सकते हैं।</div>";
