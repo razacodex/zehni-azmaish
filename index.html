@@ -14,29 +14,42 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Quiz Winner List Maker</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f4f6f8;font-family:Arial,sans-serif;color:#222}
-.wrap{max-width:1000px;margin:auto;padding:14px}.card{background:#fff;border-radius:16px;padding:18px;margin:12px 0;box-shadow:0 5px 20px #00000012}
-h1{margin:0 0 6px;font-size:24px}.muted{color:#777;font-size:14px}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-input,textarea{width:100%;padding:11px;border:1px solid #ddd;border-radius:9px;font-size:16px}textarea{min-height:120px}
-button{border:0;border-radius:9px;padding:11px 15px;cursor:pointer;font-weight:600}.primary{background:#222;color:white}.secondary{background:#eee}
-.search{font-size:19px}.results{max-height:280px;overflow:auto;margin-top:10px}
-.person{padding:12px;border:1px solid #eee;border-radius:9px;margin:6px 0;cursor:pointer}.person:hover{background:#f3f5f7}
-.person b{display:block;font-size:17px}.person small{color:#888}
-.status{padding:10px;background:#f1f4f7;border-radius:9px;margin-top:10px}
-.preview{white-space:pre-wrap;background:#fafafa;border:1px solid #eee;border-radius:10px;padding:14px;font-family:Arial,sans-serif;line-height:1.45;max-height:600px;overflow:auto}
-.actions{display:flex;gap:8px;flex-wrap:wrap}.full{grid-column:1/-1}
-@media(max-width:650px){.grid{grid-template-columns:1fr}.wrap{padding:8px}}
+:root{--bg:#eef2f7;--surface:#fff;--text:#172033;--muted:#667085;--line:#e4e9f0;--primary:#4f46e5;--primary-dark:#3730a3;--shadow:0 12px 35px rgba(15,23,42,.08);--radius:20px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(circle at 0 0,rgba(79,70,229,.08),transparent 28%),radial-gradient(circle at 100% 0,rgba(14,165,233,.07),transparent 25%),var(--bg);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--text)}
+.wrap{max-width:1050px;margin:auto;padding:22px 16px 40px}
+.card{background:rgba(255,255,255,.96);border:1px solid rgba(226,232,240,.9);border-radius:var(--radius);padding:22px;margin:14px 0;box-shadow:var(--shadow)}
+h1{margin:0 0 8px;font-size:clamp(22px,4vw,30px);letter-spacing:-.5px}h3{margin:0 0 16px;font-size:19px}.muted{color:var(--muted);font-size:14px;line-height:1.55}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+input,textarea{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:13px;font-size:16px;color:var(--text);background:#fbfcfe;outline:none;transition:.2s ease}
+input{height:50px}textarea{min-height:135px;resize:vertical}
+input:focus,textarea:focus{border-color:rgba(79,70,229,.55);background:#fff;box-shadow:0 0 0 4px rgba(79,70,229,.1)}
+button{border:0;border-radius:12px;padding:12px 16px;cursor:pointer;font-weight:700;font-size:14px;transition:transform .15s ease,box-shadow .2s ease,background .2s ease}
+button:hover{transform:translateY(-1px)}button:active{transform:translateY(0) scale(.98)}
+.primary{background:linear-gradient(135deg,var(--primary),#6366f1);color:#fff;box-shadow:0 7px 18px rgba(79,70,229,.22)}
+.primary:hover{background:linear-gradient(135deg,var(--primary-dark),var(--primary))}
+.secondary{background:#eef2f6;color:#344054}.secondary:hover{background:#e5eaf0}
+.search{font-size:17px;height:54px;background:#fff}
+.results{max-height:300px;overflow:auto;margin-top:10px;scrollbar-width:thin}
+.person{display:block;width:100%;text-align:left;padding:14px 15px;margin:8px 0;border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--text);box-shadow:0 3px 10px rgba(15,23,42,.035)}
+.person:hover{background:#f8faff;border-color:#cfd5ff;box-shadow:0 6px 16px rgba(79,70,229,.08)}
+.person:active{transform:scale(.99);background:#f1f3ff}.person b{display:block;font-size:16px;margin-bottom:3px}.person small{color:var(--muted);font-size:12px}
+.status{padding:12px 14px;background:linear-gradient(135deg,#f5f7ff,#f8fafc);border:1px solid #e3e7ff;border-radius:12px;margin-top:11px;color:#475467}
+.preview{white-space:pre-wrap;background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:17px;font-family:Arial,sans-serif;line-height:1.5;max-height:600px;overflow:auto}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.actions button{min-height:45px}.full{grid-column:1/-1}.topGap{margin-top:15px}
+.winnerRow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 13px;border:1px solid var(--line);border-radius:13px;margin:8px 0;background:#fbfcfe;box-shadow:0 3px 9px rgba(15,23,42,.025)}
+.winnerRow span{min-width:0;overflow-wrap:anywhere;line-height:1.45}.winnerRow button{flex:0 0 auto}
+.danger{background:#feecec;color:#b42318}.danger:hover{background:#ffe0e0}
+.hero{position:relative;overflow:hidden;border:0;border-left:6px solid var(--primary);background:radial-gradient(circle at 100% 0,rgba(99,102,241,.18),transparent 38%),linear-gradient(135deg,#fff,#f6f7ff)}
+.hero:after{content:"";position:absolute;width:150px;height:150px;right:-55px;bottom:-75px;border-radius:50%;background:rgba(79,70,229,.07)}
+.hero h1,.hero .muted{position:relative;z-index:1}.mainWrap{position:relative;min-width:0}.mainWrap .results{position:absolute;left:0;right:0;z-index:20}
+.manualSubmitBox{margin-top:12px;padding:14px;border:1px dashed #cfd5df;border-radius:14px;background:#fafbfc}
+#names{font-family:inherit;line-height:1.6}#nameCount{margin-top:9px}.card>.card{background:#f8fafc!important;border:1px solid var(--line)!important}
+@media(max-width:650px){.wrap{padding:10px 9px 28px}.card{padding:17px;border-radius:17px;margin:10px 0}.grid{grid-template-columns:1fr;gap:10px}.full{grid-column:auto}.actions{gap:8px}h3{font-size:18px}}
+@media(max-width:400px){.actions button{width:100%;flex-basis:100%}}
 </style>
 <style>
 button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-.person{display:block;width:100%;text-align:left;background:#fff}
-.person:active{transform:scale(.99);background:#f0f3f6}
-.topGap{margin-top:12px}
-.winnerRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid #e5e7eb;border-radius:9px;margin:6px 0;background:#fafafa}
-.winnerRow span{min-width:0;overflow-wrap:anywhere}
-.danger{background:#ffe8e8;color:#a40000}
-.hero{border-left:5px solid #222}
 </style>
 
 <body>
