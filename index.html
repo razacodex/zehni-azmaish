@@ -64,7 +64,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
       <input id="hijri" value="20/रबीउल अव्वल/1448" placeholder="20/रबीउल अव्वल/1448">
       <input id="answer" value="(न)" readonly aria-label="सही जवाब (न) — स्थायी">
       <input id="questionNo" placeholder="सवाल नंबर — जैसे 173">
-      <input id="total" inputmode="numeric" placeholder="कुल Top Winner — जैसे 40" value="40">
+      <input id="total" inputmode="numeric" placeholder="कुल Top Winner — अपने-आप" value="0" readonly aria-label="कुल Top Winner — अपने-आप">
       <div class="mainWrap">
         <input id="mainWinner" autocomplete="off" placeholder="मुख्य Winner खोजें — जैसे: फिर / फुर / चुम">
         <div class="results inlineResults" id="mainResults"></div>
@@ -88,6 +88,18 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   <div class="card">
     <h3>4️⃣ चुने हुए Winners</h3>
     <div id="winnerManager"></div>
+    <div class="card" style="margin:12px 0 0;padding:14px;background:#fafafa;border:1px solid #eee;box-shadow:none;">
+      <h4 style="margin:0 0 8px;">➕ बीच में Winner जोड़ें</h4>
+      <div class="grid">
+        <input id="insertName" autocomplete="off" placeholder="नाम खोजें / पूरा नाम लिखें">
+        <input id="insertRank" inputmode="numeric" min="2" placeholder="किस Rank पर जोड़ना है? जैसे 5">
+      </div>
+      <div class="results" id="insertResults"></div>
+      <div class="actions">
+        <button type="button" class="primary" id="addAtRankBtn">➕ इस Rank पर जोड़ें</button>
+      </div>
+      <div class="muted">उदाहरण: Rank 5 डालने पर नया नाम 5वीं जगह आएगा और उसके नीचे वाले Winners की Rank अपने-आप आगे हो जाएगी।</div>
+    </div>
     <div class="actions topGap">
       <button type="button" class="primary" id="copyBtn">📋 पूरी Post Copy करें</button>
       <button type="button" class="secondary" id="undoBtn">↩️ पिछला नाम हटाएँ</button>
@@ -166,7 +178,12 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   }
 
   function digit(n) {
-    return String(n).padStart(2, "0").split("").map(x => ["0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣"][+x]).join("");
+    n = Number(n);
+    if (!Number.isFinite(n)) return "";
+    if (n >= 2 && n <= 9) {
+      return ["0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣"][n];
+    }
+    return `*${n}*`;
   }
 
   function rankEmoji(rank) {
@@ -181,18 +198,25 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
     const saved = safeJSON(STORE_NAMES, []);
     names = Array.isArray(saved) ? dedupe(saved) : [];
     const form = safeJSON(STORE_FORM, {});
-    ["day","date","hijri","questionNo","total","mainWinner","place"].forEach(id => {
+    ["day","date","hijri","questionNo","mainWinner","place"].forEach(id => {
       if (form[id] !== undefined) $(id).value = form[id];
     });
+    winners = Array.isArray(form.winners)
+      ? form.winners
+          .filter(x => x && typeof x.name === "string")
+          .map(x => ({name: x.name}))
+      : [];
     $("answer").value = "(न)";
-    if (!$("total").value) $("total").value = "40";
+    $("total").value = String(winners.length);
     renderNames();
     render();
   }
 
   function saveForm() {
     const form = {};
+    $("total").value = String(winners.length);
     ["day","date","hijri","questionNo","total","mainWinner","place"].forEach(id => form[id] = $(id).value);
+    form.winners = winners.map(w => ({name: w.name}));
     try { localStorage.setItem(STORE_FORM, JSON.stringify(form)); } catch (_) {}
   }
 
@@ -279,12 +303,8 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 
   function addWinner(name) {
     if (winners.some(x => norm(x.name) === norm(name))) return;
-    const max = Math.max(0, parseInt($("total").value, 10) || 0);
-    if (max && winners.length >= max - 1) {
-      alert(`⚠️ आपने ${max} Top Winner की सीमा पूरी कर दी है।`);
-      return;
-    }
     winners.push({name});
+    saveForm();
     $("search").value = "";
     searchNames();
     render();
@@ -293,6 +313,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   function removeWinner(index) {
     if (index < 0 || index >= winners.length) return;
     winners.splice(index, 1);
+    saveForm();
     searchNames();
     render();
   }
@@ -300,6 +321,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   window.undoLast = function() {
     if (!winners.length) { alert("कोई winner हटाने के लिए नहीं है।"); return; }
     winners.pop();
+    saveForm();
     searchNames();
     render();
   };
@@ -308,6 +330,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
     if (!winners.length) { alert("आज की winner list पहले से खाली है।"); return; }
     if (!confirm("⚠️ आज के सभी winners हटाएँ?")) return;
     winners = [];
+    saveForm();
     searchNames();
     render();
   };
@@ -355,6 +378,8 @@ ${fixedBottom}`;
   }
 
   function render() {
+    $("total").value = String(winners.length);
+    saveForm();
     $("preview").textContent = build();
     $("status").textContent = `अगली खाली rank: ${digit(winners.length + 2)}`;
     renderWinnerManager();
@@ -384,21 +409,58 @@ ${fixedBottom}`;
 
   window.copyAll = async function() {
     const text = build();
+
+    // First try the modern Clipboard API.
     try {
-      if (navigator.clipboard && window.isSecureContext) {
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
         await navigator.clipboard.writeText(text);
-      } else {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        ta.style.position = "fixed"; ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.focus(); ta.select();
-        document.execCommand("copy");
-        ta.remove();
+        alert("✅ पूरी Winner List Copy हो गई। अब WhatsApp में Paste करें।");
+        return;
       }
-      alert("✅ पूरी Winner List Copy हो गई। अब WhatsApp में Paste करें।");
-    } catch (e) {
-      alert("❌ Copy नहीं हो पाई। नीचे Preview पर long-press/click करके Copy करें।");
+    } catch (_) {}
+
+    // Fallback for HTTP/local files and browsers where Clipboard API is blocked.
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      ta.style.top = "0";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+
+      let copied = false;
+      try { copied = document.execCommand("copy"); } catch (_) {}
+      ta.remove();
+
+      if (copied) {
+        alert("✅ पूरी Winner List Copy हो गई। अब WhatsApp में Paste करें।");
+        return;
+      }
+    } catch (_) {}
+
+    // Last fallback: show a selectable copy box instead of falsely claiming success.
+    const ok = confirm("⚠️ Browser ने direct copy block कर दी। क्या Copy Box खोलें?");
+    if (ok) {
+      const box = document.createElement("div");
+      box.style.cssText = "position:fixed;inset:10px;background:#fff;z-index:99999;padding:14px;border-radius:12px;box-shadow:0 8px 30px #0005;";
+      box.innerHTML = "<b>नीचे का पूरा text Select करके Copy करें:</b>";
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.cssText = "width:100%;height:calc(100% - 60px);margin-top:10px;font-size:16px;";
+      const close = document.createElement("button");
+      close.textContent = "✕ बंद करें";
+      close.style.cssText = "margin-top:8px;padding:10px 14px;";
+      close.onclick = () => box.remove();
+      box.appendChild(ta);
+      box.appendChild(close);
+      document.body.appendChild(box);
+      ta.focus();
+      ta.select();
     }
   };
 
@@ -407,7 +469,7 @@ ${fixedBottom}`;
     if (confirm("आज का पूरा form और winners reset करें? Master Names नहीं हटेंगे।")) {
       winners = [];
       ["day","date","hijri","answer","questionNo","mainWinner","place"].forEach(id => $(id).value = "");
-      $("total").value = "40";
+      $("total").value = "0";
       $("search").value = "";
       saveForm();
       searchNames();
@@ -466,6 +528,77 @@ ${fixedBottom}`;
     alert(existing ? "✅ नाम Winner में जोड़ दिया गया।" : "✅ नया नाम Winner में जुड़ गया और Master List में भी हमेशा के लिए Save हो गया।");
   }
 
+  function renderInsertSearch() {
+    const q = $("insertName").value.trim();
+    const box = $("insertResults");
+    box.innerHTML = "";
+    if (!q) return;
+
+    const found = names
+      .map(n => ({name:n, score:scoreMatch(n,q)}))
+      .filter(x => x.score >= 0)
+      .sort((a,b) => b.score - a.score || a.name.localeCompare(b.name, "hi"))
+      .slice(0, 30);
+
+    found.forEach(item => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "person";
+      b.innerHTML = `<b>${escapeHTML(item.name)}</b><small>👆 इस नाम को बीच की Rank में चुनें</small>`;
+      b.addEventListener("click", () => {
+        $("insertName").value = item.name;
+        box.innerHTML = "";
+      });
+      box.appendChild(b);
+    });
+
+    if (!found.length) {
+      box.innerHTML = "<div class='muted'>❌ Saved name नहीं मिला। पूरा नाम लिखकर सीधे जोड़ सकते हैं।</div>";
+    }
+  }
+
+  function addWinnerAtRank() {
+    const rawName = $("insertName").value.trim().replace(/\s+/g, " ");
+    const rank = parseInt($("insertRank").value, 10);
+
+    if (!rawName) {
+      alert("⚠️ पहले नाम लिखें या Search result से नाम चुनें।");
+      $("insertName").focus();
+      return;
+    }
+    if (!Number.isInteger(rank) || rank < 2 || rank > winners.length + 1) {
+      alert(`⚠️ Rank 2 से ${winners.length + 1} के बीच डालें।`);
+      $("insertRank").focus();
+      return;
+    }
+
+    const existing = names.find(n => norm(n) === norm(rawName));
+    const finalName = existing || rawName;
+
+    if (winners.some(x => norm(x.name) === norm(finalName))) {
+      alert("⚠️ यह नाम पहले से Winner List में मौजूद है।");
+      return;
+    }
+
+
+    if (!existing) {
+      names = dedupe(names.concat([rawName]));
+      try { localStorage.setItem(STORE_NAMES, JSON.stringify(names)); } catch (_) {}
+      renderNames();
+    }
+
+    winners.splice(rank - 2, 0, {name: finalName});
+    saveForm();
+
+    $("insertName").value = "";
+    $("insertRank").value = "";
+    $("insertResults").innerHTML = "";
+
+    searchNames();
+    render();
+    alert(`✅ ${finalName} को Rank ${rank} पर जोड़ दिया गया।`);
+  }
+
   // Live updates.
   ["day","date","hijri","questionNo","total","mainWinner","place"].forEach(id => {
     $(id).addEventListener("input", () => { saveForm(); render(); });
@@ -473,6 +606,8 @@ ${fixedBottom}`;
   $("search").addEventListener("input", searchNames);
   $("mainWinner").addEventListener("input", () => { renderMainSearch(); saveForm(); render(); });
   $("submitSearchedBtn").addEventListener("click", submitSearchedName);
+  $("insertName").addEventListener("input", renderInsertSearch);
+  $("addAtRankBtn").addEventListener("click", addWinnerAtRank);
   $("answer").value = "(न)";
   $("answer").addEventListener("input", () => { $("answer").value = "(न)"; });
 
