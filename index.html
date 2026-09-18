@@ -21,9 +21,10 @@ body{margin:0;background:radial-gradient(circle at 0 0,rgba(79,70,229,.08),trans
 .card{background:rgba(255,255,255,.96);border:1px solid rgba(226,232,240,.9);border-radius:var(--radius);padding:22px;margin:14px 0;box-shadow:var(--shadow)}
 h1{margin:0 0 8px;font-size:clamp(22px,4vw,30px);letter-spacing:-.5px}h3{margin:0 0 16px;font-size:19px}.muted{color:var(--muted);font-size:14px;line-height:1.55}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
-input,textarea{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:13px;font-size:16px;color:var(--text);background:#fbfcfe;outline:none;transition:.2s ease}
-input{height:50px}textarea{min-height:135px;resize:vertical}
+input,textarea,select{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:13px;font-size:16px;color:var(--text);background:#fbfcfe;outline:none;transition:.2s ease}
+input,select{height:50px}textarea{min-height:135px;resize:vertical}
 input:focus,textarea:focus{border-color:rgba(79,70,229,.55);background:#fff;box-shadow:0 0 0 4px rgba(79,70,229,.1)}
+.day-dropdown{position:relative;width:100%}.day-select{width:100%;height:50px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;font-weight:600;padding:13px 14px;border:1px solid var(--line);border-radius:13px;font-size:16px;color:var(--text);background:#fbfcfe;outline:none;transition:.2s ease}.day-select:hover{border-color:rgba(79,70,229,.45);background:#fff}.day-select:focus,.day-dropdown.open .day-select{border-color:rgba(79,70,229,.55);background:#fff;box-shadow:0 0 0 4px rgba(79,70,229,.1)}.day-arrow{font-size:22px;line-height:1;color:var(--primary);transition:transform .2s ease;margin-top:-5px}.day-dropdown.open .day-arrow{transform:rotate(180deg)}.day-menu{display:none;position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:1000;background:#fff;border:1px solid #e1e5ef;border-radius:16px;padding:7px;box-shadow:0 16px 35px rgba(15,23,42,.16);overflow:hidden}.day-dropdown.open .day-menu{display:block}.day-menu button{display:flex;width:100%;align-items:center;justify-content:space-between;text-align:left;padding:13px 12px;border:0;border-radius:11px;background:transparent;color:var(--text);font-size:15px;font-weight:600;cursor:pointer;transform:none}.day-menu button:hover{background:#f5f7ff;color:var(--primary)}.day-menu button.active{background:#eef2ff;color:var(--primary-dark)}.day-menu button.active::after{content:"✓";font-size:18px;font-weight:800}
 button{border:0;border-radius:12px;padding:12px 16px;cursor:pointer;font-weight:700;font-size:14px;transition:transform .15s ease,box-shadow .2s ease,background .2s ease}
 button:hover{transform:translateY(-1px)}button:active{transform:translateY(0) scale(.98)}
 .primary{background:linear-gradient(135deg,var(--primary),#6366f1);color:#fff;box-shadow:0 7px 18px rgba(79,70,229,.22)}
@@ -72,7 +73,22 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   <div class="card">
     <h3>2️⃣ आज की Post की जानकारी</h3>
     <div class="grid">
-      <input id="day" value="पंज शंमबह /जुमेरात" placeholder="पंज शंमबह /जुमेरात">
+      <div class="day-dropdown" id="dayDropdown">
+        <input type="hidden" id="day" value="हफ़्ता / शम्बा">
+        <button type="button" class="day-select" id="daySelectBtn" aria-haspopup="listbox" aria-expanded="false">
+          <span id="daySelectText">हफ़्ता / शम्बा</span>
+          <span class="day-arrow">⌄</span>
+        </button>
+        <div class="day-menu" id="dayMenu" role="listbox" aria-label="दिन चुनें">
+          <button type="button" role="option" data-value="हफ़्ता / शम्बा">हफ़्ता / शम्बा</button>
+          <button type="button" role="option" data-value="इतवार / यक-शम्बा">इतवार / यक-शम्बा</button>
+          <button type="button" role="option" data-value="पीर / दो-शम्बा">पीर / दो-शम्बा</button>
+          <button type="button" role="option" data-value="मंगल / से-शम्बा">मंगल / से-शम्बा</button>
+          <button type="button" role="option" data-value="बुध / चहार-शम्बा">बुध / चहार-शम्बा</button>
+          <button type="button" role="option" data-value="जुमेरात / पंज-शम्बा">जुमेरात / पंज-शम्बा</button>
+          <button type="button" role="option" data-value="जुमा / जुमा">जुमा / जुमा</button>
+        </div>
+      </div>
       <input id="date" value="03/सितम्बर/2026" placeholder="03/सितम्बर/2026">
       <input id="hijri" value="20/रबीउल अव्वल/1448" placeholder="20/रबीउल अव्वल/1448">
       <input id="answer" value="(न)" readonly aria-label="सही जवाब (न) — स्थायी">
@@ -222,6 +238,10 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
     $("answer").value = "(न)";
     $("total").value = String(winners.length + ($("mainWinner").value.trim() ? 1 : 0));
     renderNames();
+    if ($("daySelectText")) {
+      $("daySelectText").textContent = $("day").value || "हफ़्ता / शम्बा";
+      $("dayMenu")?.querySelectorAll("button[data-value]").forEach(b => b.classList.toggle("active", b.dataset.value === $("day").value));
+    }
     render();
   }
 
@@ -348,7 +368,47 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
     render();
   };
 
-  function escapeHTML(s) {
+  function setupDayDropdown() {
+    const wrap = $("dayDropdown");
+    const btn = $("daySelectBtn");
+    const menu = $("dayMenu");
+    const text = $("daySelectText");
+    const hidden = $("day");
+    if (!wrap || !btn || !menu || !text || !hidden) return;
+
+    function syncDayUI() {
+      text.textContent = hidden.value || "हफ़्ता / शम्बा";
+      menu.querySelectorAll("button[data-value]").forEach(b => {
+        b.classList.toggle("active", b.dataset.value === hidden.value);
+      });
+    }
+
+    btn.addEventListener("click", () => {
+      const open = wrap.classList.toggle("open");
+      btn.setAttribute("aria-expanded", String(open));
+    });
+
+    menu.querySelectorAll("button[data-value]").forEach(option => {
+      option.addEventListener("click", () => {
+        hidden.value = option.dataset.value;
+        syncDayUI();
+        wrap.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+        hidden.dispatchEvent(new Event("input", {bubbles:true}));
+      });
+    });
+
+    document.addEventListener("click", e => {
+      if (!wrap.contains(e.target)) {
+        wrap.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    syncDayUI();
+  }
+
+    function escapeHTML(s) {
     return String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[m]));
   }
 
@@ -481,7 +541,12 @@ ${fixedBottom}`;
   window.clearToday = function() {
     if (confirm("आज का पूरा form और winners reset करें? Master Names नहीं हटेंगे।")) {
       winners = [];
-      ["day","date","hijri","answer","questionNo","mainWinner","place"].forEach(id => $(id).value = "");
+      ["date","hijri","answer","questionNo","mainWinner","place"].forEach(id => $(id).value = "");
+      $("day").value = "हफ़्ता / शम्बा";
+      if ($("daySelectText")) {
+        $("daySelectText").textContent = $("day").value;
+        $("dayMenu")?.querySelectorAll("button[data-value]").forEach(b => b.classList.toggle("active", b.dataset.value === $("day").value));
+      }
       $("total").value = "0";
       $("search").value = "";
       saveForm();
@@ -635,6 +700,7 @@ ${fixedBottom}`;
   $("answer").value = "(न)";
   $("answer").addEventListener("input", () => { $("answer").value = "(न)"; });
 
+  setupDayDropdown();
   load();
   searchNames();
 })();
